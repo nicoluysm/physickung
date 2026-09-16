@@ -1,0 +1,64 @@
+import matplotlib.pyplot as plt
+import numpy as np
+
+# 1. กำหนดขอบเขตของพื้นที่ 2D (พิกัด X และ Y จาก -5 ถึง 5)
+x = np.linspace(-5, 5, 20)
+y = np.linspace(-5, 5, 20)
+X, Y = np.meshgrid(x, y)
+
+# 2. กำหนดตำแหน่งและขนาดของประจุ [ตำแหน่ง x, ตำแหน่ง y, ค่าประจุ q]
+# ค่า q เป็นบวก (+) คือประจุบวก, ค่า q เป็นลบ (-) คือประจุลบ
+charges = [
+    [ -2, 0,  1 ],  # ประจุบวก +1 อยู่ที่พิกัด (-2, 0)
+    [  2, 0, -1 ]   # ประจุลบ -1 อยู่ที่พิกัด (2, 0)
+]
+
+# 3. คำนวณสนามไฟฟ้า Ex และ Ey ณ ทุกจุดบนพิกัด
+Ex = np.zeros(X.shape)
+Ey = np.zeros(Y.shape)
+k = 8.99e9  # ค่าคงที่ของคูลอมบ์ (N·m²/C²)
+
+for cx, cy, q in charges:
+    dx = X - cx
+    dy = Y - cy
+    r2 = dx**2 + dy**2  # ระยะทางยกกำลังสอง (r^2)
+    
+    # ป้องกันการหารด้วยศูนย์เมื่อระยะทาง r เข้าใกล้จุดศูนย์กลางประจุ
+    r2[r2 < 0.2] = 0.2
+    
+    r = np.sqrt(r2)
+    # ขนาดสนามไฟฟ้า E = k * q / r^2
+    E_mag = k * q / r2
+    
+    # แยกส่วนประกอบเวกเตอร์สนามไฟฟ้าตามแนวแกน X และ Y
+    Ex += E_mag * (dx / r)
+    Ey += E_mag * (dy / r)
+
+# 4. ปรับขนาดเวกเตอร์ให้เท่ากันเพื่อให้เห็นทิศทางลูกศรชัดเจน (Normalize)
+E_total = np.sqrt(Ex**2 + Ey**2)
+Ex_norm = Ex / E_total
+Ey_norm = Ey / E_total
+
+# 5. วาดรูปแสดงผล
+plt.figure(figsize=(7, 6))
+
+# วาดลูกศรทิศทางของสนามไฟฟ้า (Quiver plot)
+plt.quiver(X, Y, Ex_norm, Ey_norm, E_total, cmap='coolwarm', pivot='middle')
+
+# วาดจุดแทนตำแหน่งประจุ
+for cx, cy, q in charges:
+    if q > 0:
+        plt.scatter(cx, cy, color='red', s=200, zorder=5, label=f'ประจุบวก (+{q})')
+    else:
+        plt.scatter(cx, cy, color='blue', s=200, zorder=5, label=f'ประจุลบ ({q})')
+
+# ตกแต่งกราฟ
+plt.title('แบบจำลองสนามไฟฟ้า 2D (Electric Field Lines)', fontsize=14)
+plt.xlabel('แกน X', fontsize=12)
+plt.ylabel('แกน Y', fontsize=12)
+plt.grid(True, linestyle='--', alpha=0.5)
+plt.legend(loc='upper right')
+plt.colorbar(label='ความเข้มของสนามไฟฟ้า (Relative Magnitude)')
+
+# แสดงผลกราฟ
+plt.show()
